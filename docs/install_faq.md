@@ -104,5 +104,9 @@ I am trying to remove stuff.
 
 **Q: I want to delete my local Helm. Where are all its files?**
 
-Along with the `helm` binary, Helm stores some files in `$HELM_HOME`, which is
-located by default in `~/.helm`.
+Along with the `helm` binary, Helm stores some files in `$HELM_HOME`. Check those
+locations to remove all the configurations too:
+ - `$XDG_CONFIG_DIR/helm` on *nix;
+ - `%APPDATA%\helm` on Windows;
+ - `$HOME/Library/Preferences` on OSX;
+ - `$HOME/.helm` if you were using old version of helm.

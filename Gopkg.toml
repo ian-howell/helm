@@ -76,3 +76,7 @@
   name = "rsc.io/letsencrypt"
   branch = "master"
   source = "https://github.com/dmcgowan/letsencrypt.git"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/casimir/xdg-go"
