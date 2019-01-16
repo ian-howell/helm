@@ -106,7 +106,7 @@ I am trying to remove stuff.
 
 Along with the `helm` binary, Helm stores some files in `$HELM_HOME`. Check those
 locations to remove all the configurations too:
- - `$XDG_CONFIG_DIR/helm` on *nix;
+ - `$XDG_CONFIG_DIR/helm` (typically ~/.config/helm) on Linux;
  - `%APPDATA%\helm` on Windows;
  - `$HOME/Library/Preferences` on OSX;
  - `$HOME/.helm` if you were using old version of helm.
