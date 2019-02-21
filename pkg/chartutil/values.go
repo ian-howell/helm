@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"reflect"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -156,6 +157,58 @@ func ReadValuesFile(filename string) (Values, error) {
 		return map[string]interface{}{}, err
 	}
 	return ReadValues(data)
+}
+
+// CreateSchemaFromValues will generate a values.schema.yaml file in the same
+// directory as values.yaml. The contents of the schema file will be created
+// by introspecting the values.yaml
+func CreateSchemaFromValues(vals Values) (Schema, error) {
+	schema := Schema{
+		Title:      "Values",
+		Type:       "object",
+		Properties: make(map[string]*Schema),
+	}
+	schema.Properties = ParsePropertiesFromValues(vals)
+	return schema, nil
+}
+
+// ParsePropertiesFromValues will recursively read the nested objects from the Values
+func ParsePropertiesFromValues(vals Values) map[string]*Schema {
+	schemaProps := make(map[string]*Schema)
+	for k, v := range vals {
+		if v == nil {
+			continue
+		}
+		var typeof string
+		var nestedProperties SchemaProperties
+		vt := reflect.TypeOf(v).Kind()
+		switch vt {
+		case reflect.Float64:
+			typeof = "number"
+		case reflect.Map:
+			typeof = "object"
+			nestedProperties = ParsePropertiesFromValues(v.(map[string]interface{}))
+		case reflect.Slice:
+			firstItem := v.([]interface{})[0]
+			vvt := reflect.TypeOf(firstItem).Kind()
+			switch vvt {
+			case reflect.Map:
+				typeof = "list[object]"
+				nestedProperties = ParsePropertiesFromValues(firstItem.(map[string]interface{}))
+			case reflect.Float64:
+				typeof = "list[number]"
+			default:
+				typeof = "list[" + vvt.String() + "]"
+			}
+		default:
+			typeof = vt.String()
+		}
+		schemaProps[k] = &Schema{
+			Type:       typeof,
+			Properties: nestedProperties,
+		}
+	}
+	return schemaProps
 }
 
 // CoalesceValues coalesces all of the values in a chart (and its subcharts).

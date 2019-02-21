@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 	"text/template"
 
@@ -470,6 +471,88 @@ required:
 		t.Fatalf("Error parsing bytes: %s", err)
 	}
 	matchSchema(t, data)
+}
+
+func TestCreateSchemaFromValues(t *testing.T) {
+	valuesFile := `firstname: John
+lastname: Doe
+age: 25
+address:
+  city: Springfield
+  street: main
+  number: 12345
+phonenumbers:
+  - "(888) 888-8888"
+  - "(123) 456-7890"
+  - "(555) 555-5555"
+blah:
+  - foo: 123
+    bar: "bar"
+    baz:
+    - baz1
+    - baz2
+`
+
+	vals, err := ReadValues([]byte(valuesFile))
+	if err != nil {
+		panic(err)
+	}
+
+	schema, err := CreateSchemaFromValues(vals)
+	if err != nil {
+		panic(err)
+	}
+
+	expected := Schema{
+		Title: "Values",
+		Type:  "object",
+		Properties: SchemaProperties{
+			"address": &Schema{
+				Type: "object",
+				Properties: SchemaProperties{
+					"city": &Schema{
+						Type: "string",
+					},
+					"number": &Schema{
+						Type: "number",
+					},
+					"street": &Schema{
+						Type: "string",
+					},
+				},
+			},
+			"age": &Schema{
+				Type: "number",
+			},
+			"blah": &Schema{
+				Type: "list[object]",
+				Properties: SchemaProperties{
+					"bar": &Schema{
+						Type: "string",
+					},
+					"baz": &Schema{
+						Type: "list[string]",
+					},
+					"foo": &Schema{
+						Type: "number",
+					},
+				},
+			},
+			"firstname": &Schema{
+				Type: "string",
+			},
+			"lastname": &Schema{
+				Type: "string",
+			},
+			"phonenumbers": &Schema{
+				Type: "list[string]",
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(schema, expected) {
+		t.Errorf("Schema did not match expected")
+	}
 }
 
 func matchSchema(t *testing.T, data Schema) {
