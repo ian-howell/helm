@@ -52,7 +52,7 @@ all: build
 .PHONY: build
 build: $(BINDIR)/$(BINNAME)
 
-$(BINDIR)/$(BINNAME): $(SRC) vendor
+$(BINDIR)/$(BINNAME): $(SRC)
 	go build $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $(BINDIR)/$(BINNAME) helm.sh/helm/cmd/helm
 
 # ------------------------------------------------------------------------------
@@ -65,19 +65,19 @@ test: test-style
 test: test-unit
 
 .PHONY: test-unit
-test-unit: vendor
+test-unit:
 	@echo
 	@echo "==> Running unit tests <=="
 	HELM_HOME=/no_such_dir go test $(GOFLAGS) -run $(TESTS) $(PKG) $(TESTFLAGS)
 
 .PHONY: test-coverage
-test-coverage: vendor
+test-coverage:
 	@echo
 	@echo "==> Running unit tests with coverage <=="
 	@ HELM_HOME=/no_such_dir ./scripts/coverage.sh
 
 .PHONY: test-style
-test-style: vendor $(GOLANGCI_LINT)
+test-style: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run
 	@scripts/validate-license.sh
 
@@ -96,12 +96,6 @@ format: $(GOIMPORTS)
 # ------------------------------------------------------------------------------
 #  dependencies
 
-.PHONY: bootstrap
-bootstrap: vendor
-
-$(DEP):
-	go get -u github.com/golang/dep/cmd/dep
-
 $(GOX):
 	go get -u github.com/mitchellh/gox
 
@@ -111,22 +105,11 @@ $(GOLANGCI_LINT):
 $(GOIMPORTS):
 	go get -u golang.org/x/tools/cmd/goimports
 
-# install vendored dependencies
-vendor: Gopkg.lock
-	$(DEP) ensure --vendor-only
-
-# update vendored dependencies
-Gopkg.lock: Gopkg.toml
-	$(DEP) ensure --no-vendor
-
-Gopkg.toml: $(DEP)
-
 # ------------------------------------------------------------------------------
 #  release
 
 .PHONY: build-cross
 build-cross: LDFLAGS += -extldflags "-static"
-build-cross: vendor
 build-cross: $(GOX)
 	CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' helm.sh/helm/cmd/helm
 
